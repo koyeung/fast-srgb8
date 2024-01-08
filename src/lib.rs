@@ -48,6 +48,9 @@ extern crate test;
 ))]
 mod sse2;
 
+#[cfg(all(not(miri), target_arch = "aarch64", target_feature = "neon"))]
+mod neon;
+
 /// Converts linear f32 RGB component to an 8-bit sRGB value.
 ///
 /// If you have to do this for many values simultaneously, use
@@ -191,10 +194,20 @@ pub fn f32x4_to_srgb8(input: [f32; 4]) -> [u8; 4] {
         // Safety: we've checked that we're on x86/x86_64 and have SSE2
         crate::sse2::simd_to_srgb8(input)
     }
+    #[cfg(all(not(miri), target_arch = "aarch64", target_feature = "neon"))]
+    unsafe {
+        // Safety: we've checked that we're on aarch64 and have neon
+        crate::neon::simd_to_srgb8(input)
+    }
     #[cfg(not(all(
         not(miri),
-        any(target_arch = "x86_64", target_arch = "x86"),
-        target_feature = "sse2"
+        any(
+            all(
+                any(target_arch = "x86_64", target_arch = "x86"),
+                target_feature = "sse2"
+            ),
+            all(target_arch = "aarch64", target_feature = "neon")
+        ),
     )))]
     {
         [
