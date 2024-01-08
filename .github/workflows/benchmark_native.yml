@@ -1,0 +1,36 @@
+name: Benchmark target-cpu=native
+
+on:
+  push:
+
+env:
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: -Dwarnings -Ctarget-cpu=native
+  RUSTDOCFLAGS: -Dwarnings
+
+jobs:
+  bench:
+    name: Test Rust ${{ matrix.rust }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [nightly]
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust }}
+      # going to do bench if on nightly
+      # before that, print information associate with bench result
+      - run: rustc -Ctarget-cpu=native --print cfg
+        if: matrix.rust == 'nightly'
+      - run: rustc -Ctarget-cpu=native --print target-cpus
+        if: matrix.rust == 'nightly'
+      # bench if on nightly
+      - run: cargo bench
+        env:
+          RUSTFLAGS: -Dwarnings --cfg unstable_bench
+        if: matrix.rust == 'nightly'
+        
