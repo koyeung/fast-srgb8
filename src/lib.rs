@@ -197,13 +197,29 @@ pub fn f32x4_to_srgb8(input: [f32; 4]) -> [u8; 4] {
         target_feature = "sse2"
     )))]
     {
-        [
-            f32_to_srgb8(input[0]),
-            f32_to_srgb8(input[1]),
-            f32_to_srgb8(input[2]),
-            f32_to_srgb8(input[3]),
-        ]
+        f32_to_srgb8_x4(input)
     }
+}
+
+/// Call [`f32_to_srgb8`] four times.
+///
+/// Separate it from [`f32x4_to_srgb8`] to ease benchmark when no SIMD is available.
+#[cfg(any(
+    not(all(
+        not(miri),
+        any(target_arch = "x86_64", target_arch = "x86"),
+        target_feature = "sse2"
+    )),
+    all(unstable_bench, test)
+))]
+#[inline(always)]
+fn f32_to_srgb8_x4(input: [f32; 4]) -> [u8; 4] {
+    [
+        f32_to_srgb8(input[0]),
+        f32_to_srgb8(input[1]),
+        f32_to_srgb8(input[2]),
+        f32_to_srgb8(input[3]),
+    ]
 }
 
 const TO_SRGB8_TABLE: [u32; 104] = [
@@ -441,11 +457,13 @@ mod tests {
         fn fast_f32x4_nosimd(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=BENCH_SUBDIV {
-                    let a = f32_to_srgb8(i as f32 / BENCH_SUBDIV as f32);
-                    let b = f32_to_srgb8(i as f32 / BENCH_SUBDIV as f32 + 0.025);
-                    let c = f32_to_srgb8(i as f32 / BENCH_SUBDIV as f32 + 0.05);
-                    let d = f32_to_srgb8(i as f32 / BENCH_SUBDIV as f32 + 0.075);
-                    test::black_box([a, b, c, d]);
+                    let v = f32_to_srgb8_x4([
+                        i as f32 / BENCH_SUBDIV as f32,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.025,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.05,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.075,
+                    ]);
+                    test::black_box(v);
                 }
             });
         }
