@@ -31,6 +31,12 @@ jobs:
       # exhaustive tests
       - run: cargo test --release -- --nocapture --ignored
         if: matrix.rust == 'stable'
+      # going to do bench if on nightly
+      # before that, print information associate with bench result
+      - run: rustc --print cfg
+        if: matrix.rust == 'nightly'
+      - run: rustc --print target-cpus
+        if: matrix.rust == 'nightly'
       # bench if on nightly
       - run: cargo bench
         env:
