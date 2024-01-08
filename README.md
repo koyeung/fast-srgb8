@@ -2,7 +2,7 @@
 [![Build Status](https://github.com/thomcc/fast-srgb8/workflows/CI/badge.svg)](https://github.com/thomcc/fast-srgb8/actions)
 [![Docs](https://docs.rs/fast-srgb8/badge.svg)](https://docs.rs/fast-srgb8)
 [![Latest Version](https://img.shields.io/crates/v/fast-srgb8.svg)](https://crates.io/crates/fast-srgb8)
-![Minimum Rust Version](https://img.shields.io/badge/MSRV%201.46-blue.svg)
+![Minimum Rust Version](https://img.shields.io/badge/MSRV%201.59-blue.svg)
 
 Small crate implementing fast conversion between linear float and 8-bit sRGB. Includes API for performing 4 simultaneous conversions, which are SIMD accelerated using SSE2 if available. Supports no_std (doesn't need `libm` either).
 
