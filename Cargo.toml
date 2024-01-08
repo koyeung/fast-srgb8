@@ -1,7 +1,7 @@
 [package]
 name = "fast-srgb8"
 version = "1.0.0"
-edition = "2018"
+edition = "2021"
 authors = ["Thom Chiovoloni <chiovolonit@gmail.com>"]
 readme = "README.md"
 description = "Very fast conversions between linear float and 8-bit sRGB (with no_std support)."
