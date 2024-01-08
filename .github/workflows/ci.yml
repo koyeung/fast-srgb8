@@ -15,12 +15,13 @@ env:
 
 jobs:
   test:
-    name: Test Rust ${{ matrix.rust }}
-    runs-on: ubuntu-latest
+    name: Test Rust ${{ matrix.rust }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         rust: [1.46.0, stable, beta, nightly]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
       - uses: hecrj/setup-rust-action@v1
