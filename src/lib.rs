@@ -193,10 +193,34 @@ pub fn f32x4_to_srgb8(input: [f32; 4]) -> [u8; 4] {
 
 #[inline(always)]
 fn f32x4_to_srgb8_inner<const N: usize>(input: [f32; N]) -> [u8; N] {
-    let mut output = [0; N];
+    const MAXV_BITS: u32 = 0x3f7fffff; // 1.0 - f32::EPSILON
+    const MINV_BITS: u32 = 0x39000000; // 2^(-13)
+    let minv = f32::from_bits(MINV_BITS);
+    let maxv = f32::from_bits(MAXV_BITS);
+
+    let mut output = [0_u8; N];
+
     for i in 0..N {
-        output[i] = f32_to_srgb8_inner(input[i]);
+        let f = input[i];
+
+        let f = f.max(minv).min(maxv);
+        let f_u = f.to_bits();
+        let entry = unsafe {
+            let i = ((f_u - MINV_BITS) >> 20) as usize;
+            *TO_SRGB8_TABLE.get_unchecked(i)
+        };
+
+        // lerp to the next highest mantissa bits.
+        let bias = (entry >> 16) << 9;
+        let scale = entry & 0xffff;
+
+        // lerp to the next highest mantissa bits.
+        let t = (f_u >> 12) & 0xff;
+        let res = (bias + scale * t) >> 16;
+
+        output[i] = res.to_le_bytes()[0];
     }
+
     output
 }
 
