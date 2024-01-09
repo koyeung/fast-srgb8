@@ -211,14 +211,14 @@ fn f32x4_to_srgb8_inner<const N: usize>(input: [f32; N]) -> [u8; N] {
         };
 
         // lerp to the next highest mantissa bits.
-        // let bias = (entry >> 16) << 9;
-        // let scale = (entry & 0xffff) as u16;
+        let t = (f_u >> 12) & 0xff;
 
         // lerp to the next highest mantissa bits.
-        let t = (f_u >> 12) & 0xff;
-        let res = (bias + scale * t) >> 16;
+        // let bias = (entry >> 16) << 9;
+        // let scale = (entry & 0xffff) as u16;
+        let res = (bias + scale * t).to_le_bytes()[2];
 
-        output[i] = res.to_le_bytes()[0];
+        output[i] = res
     }
 
     output
