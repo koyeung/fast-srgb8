@@ -36,6 +36,7 @@
 //!   of edge cases, such as NaN/Inf/etc.
 //! - Exhaustive checking of all inputs for correctness (in tests).
 
+#![allow(dead_code)]
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(all(test, unstable_bench), feature(test))]
 #[cfg(all(test, unstable_bench))]
@@ -114,6 +115,11 @@ mod sse2;
 /// and round trip appropriately.
 #[inline]
 pub fn f32_to_srgb8(f: f32) -> u8 {
+    f32_to_srgb8_inner(f)
+}
+
+#[inline(always)]
+pub fn f32_to_srgb8_inner(f: f32) -> u8 {
     const MAXV_BITS: u32 = 0x3f7fffff; // 1.0 - f32::EPSILON
     const MINV_BITS: u32 = 0x39000000; // 2^(-13)
     let minv = f32::from_bits(MINV_BITS);
@@ -182,28 +188,7 @@ pub fn f32_to_srgb8(f: f32) -> u8 {
 /// it's documentation for more information.
 #[inline]
 pub fn f32x4_to_srgb8(input: [f32; 4]) -> [u8; 4] {
-    #[cfg(all(
-        not(miri),
-        any(target_arch = "x86_64", target_arch = "x86"),
-        target_feature = "sse2"
-    ))]
-    unsafe {
-        // Safety: we've checked that we're on x86/x86_64 and have SSE2
-        crate::sse2::simd_to_srgb8(input)
-    }
-    #[cfg(not(all(
-        not(miri),
-        any(target_arch = "x86_64", target_arch = "x86"),
-        target_feature = "sse2"
-    )))]
-    {
-        [
-            f32_to_srgb8(input[0]),
-            f32_to_srgb8(input[1]),
-            f32_to_srgb8(input[2]),
-            f32_to_srgb8(input[3]),
-        ]
-    }
+    input.map(f32_to_srgb8_inner)
 }
 
 const TO_SRGB8_TABLE: [u32; 104] = [
