@@ -188,7 +188,16 @@ pub fn f32_to_srgb8_inner(f: f32) -> u8 {
 /// it's documentation for more information.
 #[inline]
 pub fn f32x4_to_srgb8(input: [f32; 4]) -> [u8; 4] {
-    input.map(f32_to_srgb8_inner)
+    f32x4_to_srgb8_inner(input)
+}
+
+#[inline(always)]
+fn f32x4_to_srgb8_inner<const N: usize>(input: [f32; N]) -> [u8; N] {
+    let mut output = [0; N];
+    for i in 0..N {
+        output[i] = f32_to_srgb8_inner(input[i]);
+    }
+    output
 }
 
 const TO_SRGB8_TABLE: [u32; 104] = [
