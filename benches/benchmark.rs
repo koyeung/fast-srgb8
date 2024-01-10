@@ -1,6 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
-
-use core::hint::black_box;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use fast_srgb8::*;
 
@@ -23,7 +21,7 @@ fn bench_func(c: &mut Criterion) {
             for i in 0..count {
                 let input: [f32; 4] = data[i * array_len..(i + 1) * array_len].try_into().unwrap();
 
-                black_box(f32x4_to_srgb8(input));
+                black_box(f32x4_to_srgb8(black_box(input)));
             }
         })
     });
@@ -31,7 +29,7 @@ fn bench_func(c: &mut Criterion) {
     c.bench_function("fast_srgb8", |b| {
         b.iter(|| {
             for &f in data.iter() {
-                black_box(f32_to_srgb8(f));
+                black_box(f32_to_srgb8(black_box(f)));
             }
         })
     });
