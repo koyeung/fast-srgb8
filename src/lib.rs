@@ -443,22 +443,37 @@ mod tests {
         fn fast_f32x4(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=BENCH_SUBDIV {
-                    let v = f32x4_to_srgb8([
+                    let v = f32x4_to_srgb8(test::black_box([
                         i as f32 / BENCH_SUBDIV as f32,
                         i as f32 / BENCH_SUBDIV as f32 + 0.025,
                         i as f32 / BENCH_SUBDIV as f32 + 0.05,
                         i as f32 / BENCH_SUBDIV as f32 + 0.075,
-                    ]);
+                    ]));
                     test::black_box(v);
                 }
             });
         }
 
         #[bench]
-        fn fast_f32x8(b: &mut test::Bencher) {
+        fn fast_n_f32x4(b: &mut test::Bencher) {
+            b.iter(|| {
+                for i in 0..=BENCH_SUBDIV {
+                    let v = f32xn_to_srgb8(test::black_box([
+                        i as f32 / BENCH_SUBDIV as f32,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.025,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.05,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.075,
+                    ]));
+                    test::black_box(v);
+                }
+            });
+        }
+
+        #[bench]
+        fn fast_n_f32x8(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=(BENCH_SUBDIV / 2) {
-                    let v = f32xn_to_srgb8([
+                    let v = f32xn_to_srgb8(test::black_box([
                         i as f32 / BENCH_SUBDIV as f32,
                         i as f32 / BENCH_SUBDIV as f32 + 0.025,
                         i as f32 / BENCH_SUBDIV as f32 + 0.05,
@@ -467,7 +482,7 @@ mod tests {
                         i as f32 / BENCH_SUBDIV as f32 + 0.02 + 0.025,
                         i as f32 / BENCH_SUBDIV as f32 + 0.02 + 0.05,
                         i as f32 / BENCH_SUBDIV as f32 + 0.02 + 0.075,
-                    ]);
+                    ]));
                     test::black_box(v);
                 }
             });
