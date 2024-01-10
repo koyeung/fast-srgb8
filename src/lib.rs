@@ -197,13 +197,29 @@ pub fn f32x4_to_srgb8(input: [f32; 4]) -> [u8; 4] {
         target_feature = "sse2"
     )))]
     {
-        [
-            f32_to_srgb8(input[0]),
-            f32_to_srgb8(input[1]),
-            f32_to_srgb8(input[2]),
-            f32_to_srgb8(input[3]),
-        ]
+        // [
+        //     f32_to_srgb8(input[0]),
+        //     f32_to_srgb8(input[1]),
+        //     f32_to_srgb8(input[2]),
+        //     f32_to_srgb8(input[3]),
+        // ]
+        f32xn_to_srgb8(input)
     }
+}
+
+#[inline]
+pub fn f32xn_to_srgb8<const N: usize>(input: [f32; N]) -> [u8; N] {
+    input.map(f32_to_srgb8)
+    // let mut output = [0; N];
+    // for i in 0..N {
+    //     output[i] = f32_to_srgb8(input[i]);
+    // }
+    // output
+}
+
+pub fn myfun() {
+    let input = [0.1; 8];
+    core::hint::black_box(f32xn_to_srgb8(core::hint::black_box(input)));
 }
 
 const TO_SRGB8_TABLE: [u32; 104] = [
@@ -437,6 +453,26 @@ mod tests {
                 }
             });
         }
+
+        #[bench]
+        fn fast_f32x8(b: &mut test::Bencher) {
+            b.iter(|| {
+                for i in 0..=(BENCH_SUBDIV / 2) {
+                    let v = f32xn_to_srgb8([
+                        i as f32 / BENCH_SUBDIV as f32,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.025,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.05,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.075,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.02,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.02 + 0.025,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.02 + 0.05,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.02 + 0.075,
+                    ]);
+                    test::black_box(v);
+                }
+            });
+        }
+
         #[bench]
         fn fast_f32x4_nosimd(b: &mut test::Bencher) {
             b.iter(|| {
