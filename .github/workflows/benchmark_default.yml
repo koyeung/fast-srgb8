@@ -1,11 +1,11 @@
-name: Benchmark target-cpu=native
+name: Benchmark default target-cpu
 
 on:
   push:
 
 env:
   RUST_BACKTRACE: 1
-  RUSTFLAGS: -Dwarnings -Ctarget-cpu=native
+  RUSTFLAGS: -Dwarnings
   RUSTDOCFLAGS: -Dwarnings
 
 jobs:
@@ -24,9 +24,9 @@ jobs:
           rust-version: ${{ matrix.rust }}
       # going to do bench if on nightly
       # before that, print information associate with bench result
-      - run: rustc -Ctarget-cpu=native --print cfg
+      - run: rustc --print cfg
         if: matrix.rust == 'nightly'
-      - run: rustc -Ctarget-cpu=native --print target-cpus
+      - run: rustc --print target-cpus
         if: matrix.rust == 'nightly'
       # bench if on nightly
       - run: cargo bench --bench benchmark
