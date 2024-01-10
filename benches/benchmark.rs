@@ -26,6 +26,28 @@ fn bench_func(c: &mut Criterion) {
         })
     });
 
+    c.bench_function("f32xn_to_srgb8 n=4", |b| {
+        b.iter(|| {
+            for i in 0..count {
+                let input: [f32; 4] = data[i * array_len..(i + 1) * array_len].try_into().unwrap();
+
+                black_box(f32xn_to_srgb8(black_box(input)));
+            }
+        })
+    });
+
+    c.bench_function("f32xn_to_srgb8 n=8", |b| {
+        b.iter(|| {
+            for i in 0..(count / 2) {
+                let input: [f32; 8] = data[(i * array_len * 2)..(i + 1) * array_len * 2]
+                    .try_into()
+                    .unwrap();
+
+                black_box(f32xn_to_srgb8(black_box(input)));
+            }
+        })
+    });
+
     c.bench_function("fast_srgb8", |b| {
         b.iter(|| {
             for &f in data.iter() {
