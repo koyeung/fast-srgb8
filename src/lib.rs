@@ -38,6 +38,7 @@
 
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(all(test, unstable_bench), feature(test))]
+
 #[cfg(all(test, unstable_bench))]
 extern crate test;
 
@@ -284,6 +285,31 @@ const FROM_SRGB8_TABLE: [f32; 256] = [
     0.93011117, 0.9386859, 0.9473069, 0.9559735, 0.9646866, 0.9734455, 0.98225087, 0.9911022, 1.0
 ];
 
+pub fn myfun1() {
+    use core::hint::black_box;
+
+    const BENCH_SUBDIV: usize = 50;
+    for i in 0..=BENCH_SUBDIV {
+        black_box(f32_to_srgb8(black_box(i as f32 / BENCH_SUBDIV as f32)));
+    }
+}
+
+pub fn myfun2() {
+    use core::hint::black_box;
+
+    const BENCH_SUBDIV: usize = 50;
+
+    for i in 0..=BENCH_SUBDIV {
+        let _v = black_box(f32x4_to_srgb8(black_box([
+            i as f32 / BENCH_SUBDIV as f32,
+            i as f32 / BENCH_SUBDIV as f32 + 0.025,
+            i as f32 / BENCH_SUBDIV as f32 + 0.05,
+            i as f32 / BENCH_SUBDIV as f32 + 0.075,
+        ])));
+        // test::black_box(v);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -391,6 +417,8 @@ mod tests {
     #[cfg(unstable_bench)]
     mod bench {
         use super::*;
+        use test::black_box;
+
         fn f32_to_srgb_ref(f: f32) -> u8 {
             (unrounded_f32_to_srgb_ref(f) + 0.5) as u8
         }
@@ -399,7 +427,7 @@ mod tests {
         fn fast_scalar(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=BENCH_SUBDIV {
-                    test::black_box(f32_to_srgb8(i as f32 / BENCH_SUBDIV as f32));
+                    black_box(f32_to_srgb8(black_box(i as f32 / BENCH_SUBDIV as f32)));
                 }
             });
         }
@@ -407,7 +435,7 @@ mod tests {
         fn naive_scalar(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=BENCH_SUBDIV {
-                    test::black_box(f32_to_srgb_ref(i as f32 / BENCH_SUBDIV as f32));
+                    black_box(f32_to_srgb_ref(black_box(i as f32 / BENCH_SUBDIV as f32)));
                 }
             });
         }
@@ -415,10 +443,16 @@ mod tests {
         fn naive_f32x4(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=BENCH_SUBDIV {
-                    let a = f32_to_srgb_ref(i as f32 / BENCH_SUBDIV as f32);
-                    let b = f32_to_srgb_ref(i as f32 / BENCH_SUBDIV as f32 + 0.025);
-                    let c = f32_to_srgb_ref(i as f32 / BENCH_SUBDIV as f32 + 0.05);
-                    let d = f32_to_srgb_ref(i as f32 / BENCH_SUBDIV as f32 + 0.075);
+                    let a = black_box(f32_to_srgb_ref(black_box(i as f32 / BENCH_SUBDIV as f32)));
+                    let b = black_box(f32_to_srgb_ref(black_box(
+                        i as f32 / BENCH_SUBDIV as f32 + 0.025,
+                    )));
+                    let c = black_box(f32_to_srgb_ref(black_box(
+                        i as f32 / BENCH_SUBDIV as f32 + 0.05,
+                    )));
+                    let d = black_box(f32_to_srgb_ref(black_box(
+                        i as f32 / BENCH_SUBDIV as f32 + 0.075,
+                    )));
                     test::black_box([a, b, c, d]);
                 }
             });
@@ -427,24 +461,70 @@ mod tests {
         fn fast_f32x4(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=BENCH_SUBDIV {
-                    let v = f32x4_to_srgb8([
+                    let _v = black_box(f32x4_to_srgb8(black_box([
+                        i as f32 / BENCH_SUBDIV as f32,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.025,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.05,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.075,
+                    ])));
+                    // test::black_box(v);
+                }
+            });
+        }
+
+        #[bench]
+        fn fast_f32x4_data_only(b: &mut test::Bencher) {
+            b.iter(|| {
+                for i in 0..=BENCH_SUBDIV {
+                    let _v = black_box([
                         i as f32 / BENCH_SUBDIV as f32,
                         i as f32 / BENCH_SUBDIV as f32 + 0.025,
                         i as f32 / BENCH_SUBDIV as f32 + 0.05,
                         i as f32 / BENCH_SUBDIV as f32 + 0.075,
                     ]);
-                    test::black_box(v);
+                    // test::black_box(v);
                 }
             });
         }
+
+        #[inline]
+        fn f32_to_srgb8_x4(input: [f32; 4]) -> [u8; 4] {
+            [
+                f32_to_srgb8(input[0]),
+                f32_to_srgb8(input[1]),
+                f32_to_srgb8(input[2]),
+                f32_to_srgb8(input[3]),
+            ]
+        }
+
+        #[bench]
+        fn fast_f32x4_by_x4(b: &mut test::Bencher) {
+            b.iter(|| {
+                for i in 0..=BENCH_SUBDIV {
+                    let _v = black_box(f32_to_srgb8_x4(black_box([
+                        i as f32 / BENCH_SUBDIV as f32,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.025,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.05,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.075,
+                    ])));
+                }
+            });
+        }
+
         #[bench]
         fn fast_f32x4_nosimd(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=BENCH_SUBDIV {
-                    let a = f32_to_srgb8(i as f32 / BENCH_SUBDIV as f32);
-                    let b = f32_to_srgb8(i as f32 / BENCH_SUBDIV as f32 + 0.025);
-                    let c = f32_to_srgb8(i as f32 / BENCH_SUBDIV as f32 + 0.05);
-                    let d = f32_to_srgb8(i as f32 / BENCH_SUBDIV as f32 + 0.075);
+                    let arr = [
+                        i as f32 / BENCH_SUBDIV as f32,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.025,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.05,
+                        i as f32 / BENCH_SUBDIV as f32 + 0.075,
+                    ];
+                    let a = black_box(f32_to_srgb8(black_box(arr[0])));
+                    let b = black_box(f32_to_srgb8(black_box(arr[1])));
+                    let c = black_box(f32_to_srgb8(black_box(arr[2])));
+                    let d = black_box(f32_to_srgb8(black_box(arr[3])));
                     test::black_box([a, b, c, d]);
                 }
             });
