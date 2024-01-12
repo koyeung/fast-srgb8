@@ -117,6 +117,11 @@ mod neon;
 /// and round trip appropriately.
 #[inline]
 pub fn f32_to_srgb8(f: f32) -> u8 {
+    f32_to_srgb8_u32(f) as u8
+}
+
+#[inline(always)]
+pub fn f32_to_srgb8_u32(f: f32) -> u32 {
     const MAXV_BITS: u32 = 0x3f7fffff; // 1.0 - f32::EPSILON
     const MINV_BITS: u32 = 0x39000000; // 2^(-13)
     let minv = f32::from_bits(MINV_BITS);
@@ -166,7 +171,7 @@ pub fn f32_to_srgb8(f: f32) -> u8 {
     {
         debug_assert!(res < 256, "{}", res);
     }
-    res as u8
+    res // as u8
 }
 
 /// Performs 4 simultaneous calls to [`f32_to_srgb8`], and returns 4 results.
@@ -221,7 +226,8 @@ pub fn f32x4_to_srgb8(input: [f32; 4]) -> [u8; 4] {
 
 #[inline]
 pub fn f32xn_to_srgb8<const N: usize>(input: [f32; N]) -> [u8; N] {
-    input.map(f32_to_srgb8)
+    input.map(f32_to_srgb8_u32).map(|x| x as u8)
+    // input.map(|f| f32_to_srgb8_u32(f) as u8)
 }
 
 const TO_SRGB8_TABLE: [u32; 104] = [
