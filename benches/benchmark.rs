@@ -35,6 +35,15 @@ fn bench_func(c: &mut Criterion) {
             }
         })
     });
+    c.bench_function("f32xn_to_srgb8_u32 n=4", |b| {
+        b.iter(|| {
+            for i in 0..count {
+                let input: [f32; 4] = data[i * array_len..(i + 1) * array_len].try_into().unwrap();
+
+                black_box(f32xn_to_srgb8_u32(black_box(input)));
+            }
+        })
+    });
 
     c.bench_function("f32xn_to_srgb8 n=8", |b| {
         b.iter(|| {

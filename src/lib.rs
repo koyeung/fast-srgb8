@@ -230,6 +230,12 @@ pub fn f32xn_to_srgb8<const N: usize>(input: [f32; N]) -> [u8; N] {
     // input.map(|f| f32_to_srgb8_u32(f) as u8)
 }
 
+// slower than f32xn_to_srgb8
+#[inline]
+pub fn f32xn_to_srgb8_u32<const N: usize>(input: [f32; N]) -> [u32; N] {
+    input.map(f32_to_srgb8_u32)
+}
+
 const TO_SRGB8_TABLE: [u32; 104] = [
     0x0073000d, 0x007a000d, 0x0080000d, 0x0087000d, 0x008d000d, 0x0094000d, 0x009a000d, 0x00a1000d,
     0x00a7001a, 0x00b4001a, 0x00c1001a, 0x00ce001a, 0x00da001a, 0x00e7001a, 0x00f4001a, 0x0101001a,
