@@ -188,13 +188,13 @@ pub fn f32_to_srgb8_inner(f: f32) -> u8 {
 /// it's documentation for more information.
 #[inline]
 pub fn f32x4_to_srgb8(input: [f32; 4]) -> [u8; 4] {
-    u32x4_to_u8x4_as(f32x4_to_srgb8_inner(input))
+    u32x4_to_u8x4_as(f32xn_to_srgb8_inner(input))
     // f32x4_to_srgb8_inner(input)
 }
 
 #[inline]
 pub fn f32x8_to_srgb8(input: [f32; 8]) -> [u8; 8] {
-    u32x8_to_u8x8(f32x4_to_srgb8_inner(input))
+    u32x8_to_u8x8(f32xn_to_srgb8_inner(input))
     // f32x4_to_srgb8_inner(input)
 }
 
@@ -207,8 +207,16 @@ pub fn myfun8(input: [f32; 8]) -> [u8; 8] {
     f32x8_to_srgb8(input)
 }
 
+pub fn dump_asm_1(input: [f32; 4]) -> [u32; 4] {
+    f32xn_to_srgb8_inner(input)
+}
+
+pub fn dump_asm_2(input: [f32; 4]) -> [u8; 4] {
+    u32x4_to_u8x4_as(f32xn_to_srgb8_inner(input))
+}
+
 #[inline(always)]
-fn f32x4_to_srgb8_inner<const N: usize>(input: [f32; N]) -> [u32; N] {
+fn f32xn_to_srgb8_inner<const N: usize>(input: [f32; N]) -> [u32; N] {
     const MAXV_BITS: u32 = 0x3f7fffff; // 1.0 - f32::EPSILON
     const MINV_BITS: u32 = 0x39000000; // 2^(-13)
     let minv = f32::from_bits(MINV_BITS);
