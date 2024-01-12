@@ -515,17 +515,20 @@ mod tests {
         fn fast_f32x4_nosimd(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=BENCH_SUBDIV {
-                    let arr = [
+                    let arr = black_box([
                         i as f32 / BENCH_SUBDIV as f32,
                         i as f32 / BENCH_SUBDIV as f32 + 0.025,
                         i as f32 / BENCH_SUBDIV as f32 + 0.05,
                         i as f32 / BENCH_SUBDIV as f32 + 0.075,
-                    ];
+                    ]);
                     let a = black_box(f32_to_srgb8(black_box(arr[0])));
                     let b = black_box(f32_to_srgb8(black_box(arr[1])));
                     let c = black_box(f32_to_srgb8(black_box(arr[2])));
                     let d = black_box(f32_to_srgb8(black_box(arr[3])));
-                    test::black_box([a, b, c, d]);
+                    let result = black_box([a, b, c, d]);
+                    let _copy = black_box(result);
+                    black_box(_copy);
+                    // test::black_box([a, b, c, d]);
                 }
             });
         }
