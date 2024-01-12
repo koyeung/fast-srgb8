@@ -188,15 +188,22 @@ pub fn f32_to_srgb8_inner(f: f32) -> u8 {
 /// it's documentation for more information.
 #[inline]
 pub fn f32x4_to_srgb8(input: [f32; 4]) -> [u8; 4] {
-    u32x4_to_u8x4(f32x4_to_srgb8_inner(input))
+    u32x4_to_u8x4_as(f32x4_to_srgb8_inner(input))
+    // f32x4_to_srgb8_inner(input)
 }
 
 #[inline]
 pub fn f32x8_to_srgb8(input: [f32; 8]) -> [u8; 8] {
     u32x8_to_u8x8(f32x4_to_srgb8_inner(input))
+    // f32x4_to_srgb8_inner(input)
 }
 
-pub fn myfun(input: [f32; 8]) -> [u8; 8] {
+pub fn myfun4(input: [f32; 4]) -> [u8; 4] {
+    // core::hint::black_box(f32x4_to_srgb8_inner(input));
+
+    f32x4_to_srgb8(input)
+}
+pub fn myfun8(input: [f32; 8]) -> [u8; 8] {
     f32x8_to_srgb8(input)
 }
 
@@ -207,10 +214,7 @@ fn f32x4_to_srgb8_inner<const N: usize>(input: [f32; N]) -> [u32; N] {
     let minv = f32::from_bits(MINV_BITS);
     let maxv = f32::from_bits(MAXV_BITS);
 
-    let mut result = [0_u32; N];
-    for i in 0..N {
-        let f = input[i];
-
+    input.map(|f| {
         let f_u = f.max(minv).min(maxv).to_bits();
 
         // lerp to the next highest mantissa bits.
@@ -218,28 +222,62 @@ fn f32x4_to_srgb8_inner<const N: usize>(input: [f32; N]) -> [u32; N] {
 
         let idx = ((f_u - MINV_BITS) >> 20) as usize;
 
-        // lerp to the next highest mantissa bits.
-        // let bias = (entry >> 16) << 9;
-        // let scale = (entry & 0xffff) as u16;
         let (bias, scale) = unsafe { *TO_SRGB8_BIAS_SCALE_TABLE.get_unchecked(idx) };
 
-        // result[i] = (bias + scale * t).rotate_left(2 + i as u32) & (0xff << (i << 3))
-        result[i] = (((bias + scale * t) >> 16) & 0xff) << (i * 8);
-        // 0 -> >> 16 & 0xff  -> rotate left 2
-        // 1 -> >> 8 & 0xff << 8 -> rotate left 3
-        // 2 -> >> 0 & 0xff << 16
-        // 3 -> >> -8 & 0xff << 24
-    }
+        ((bias + scale * t) >> 16) & 0xff
+    })
 
-    result
+    // let mut result = [0_u32; N];
+    // for i in 0..N {
+    //     let f = input[i];
+
+    //     let f_u = f.max(minv).min(maxv).to_bits();
+
+    //     // lerp to the next highest mantissa bits.
+    //     let t = (f_u >> 12) & 0xff;
+
+    //     let idx = ((f_u - MINV_BITS) >> 20) as usize;
+
+    //     // lerp to the next highest mantissa bits.
+    //     // let bias = (entry >> 16) << 9;
+    //     // let scale = (entry & 0xffff) as u16;
+    //     let (bias, scale) = unsafe { *TO_SRGB8_BIAS_SCALE_TABLE.get_unchecked(idx) };
+
+    //     // result[i] = (bias + scale * t).rotate_left(2 + i as u32) & (0xff << (i << 3))
+    //     // result[i] = (((bias + scale * t) >> 16) & 0xff) << (i * 8);
+
+    //     result[i] = ((bias + scale * t) >> 16) & 0xff;
+
+    //     // 0 -> >> 16 & 0xff  -> rotate left 2
+    //     // 1 -> >> 8 & 0xff << 8 -> rotate left 3
+    //     // 2 -> >> 0 & 0xff << 16
+    //     // 3 -> >> -8 & 0xff << 24
+    // }
+    // result
 }
 
 #[inline]
-fn u32x4_to_u8x4(input: [u32; 4]) -> [u8; 4] {
+fn u32x4_to_u8x4_or(input: [u32; 4]) -> [u8; 4] {
     // let input = input.into_iter().reduce(|acc, x| acc | x).unwrap();
     let input = input[0] | input[1] | input[2] | input[3];
     input.to_ne_bytes()
     // unsafe { core::mem::transmute::<u32, [u8; 4]>(input) }
+}
+
+// "as" is faster than "index"
+#[inline]
+fn u32x4_to_u8x4_as(input: [u32; 4]) -> [u8; 4] {
+    input.map(|x| x as u8)
+}
+
+#[inline]
+fn u32x4_to_u8x4_index(input: [u32; 4]) -> [u8; 4] {
+    [
+        input[0] as u8,
+        input[1] as u8,
+        input[2] as u8,
+        input[3] as u8,
+    ]
 }
 
 #[inline]
@@ -575,12 +613,12 @@ mod tests {
         fn fast_f32x4(b: &mut test::Bencher) {
             b.iter(|| {
                 for i in 0..=BENCH_SUBDIV {
-                    let v = f32x4_to_srgb8([
+                    let v = f32x4_to_srgb8(test::black_box([
                         i as f32 / BENCH_SUBDIV as f32,
                         i as f32 / BENCH_SUBDIV as f32 + 0.025,
                         i as f32 / BENCH_SUBDIV as f32 + 0.05,
                         i as f32 / BENCH_SUBDIV as f32 + 0.075,
-                    ]);
+                    ]));
                     test::black_box(v);
                 }
             });
